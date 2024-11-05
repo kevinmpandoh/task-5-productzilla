@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import app from "./app";
+const app = require("./app");
 
 const PORT = process.env.PORT || 8000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/mydb";

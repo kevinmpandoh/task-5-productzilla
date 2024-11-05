@@ -25,8 +25,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/", router);
+app.use("/api", router);
 // Swagger Docs
 swaggerDocs(app);
 
-export default app;
+module.exports = app;
