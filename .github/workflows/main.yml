@@ -17,29 +17,25 @@ jobs:
         image: mongo:latest
         ports:
           - 27017:27017
- 
+        options: > 
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
 
     steps:
-      # Step 1: Checkout kode dari repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18' # Sesuaikan dengan versi Node.js aplikasi Anda
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # Step 3: Install dependencies
-      - name: Install dependencies
-        run: npm install
+      - name: Build Docker image
+        run: docker build -t nama-aplikasi-anda .
 
-      # Step 4: Jalankan pengujian
       - name: Run tests
-        env:
-          MONGODB_URI: mongodb://localhost:27017/testdb # Konfigurasi MongoDB untuk testing
-        run: npm test
-
+        run: docker run --rm nama-aplikasi-anda npm test
+        
   build:
     runs-on: ubuntu-latest
     needs: test  # Job build hanya akan berjalan jika job test berhasil
