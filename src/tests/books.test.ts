@@ -9,6 +9,8 @@ import { Book } from "../models/Book";
 describe("Book Controller", () => {
   let mongoServer: MongoMemoryServer;
 
+  const authCookie = "isAuthenticated=true"; //
+
   // Inisialisasi MongoDB Memory Server sebelum semua tes
   beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -25,6 +27,28 @@ describe("Book Controller", () => {
   afterAll(async () => {
     await mongoose.connection.close();
     await mongoServer.stop();
+  });
+
+  it("should login successfully with correct credentials", async () => {
+    const res = await request(app).post("/api/login").send({
+      username: "admin",
+      password: "password",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty("status", "success");
+    expect(res.body).toHaveProperty("message", "Login berhasil");
+    expect(res.headers["set-cookie"]).toBeDefined(); // Memastikan cookie ter-set
+  });
+
+  it("should fail login with incorrect credentials", async () => {
+    const res = await request(app).post("/api/login").send({
+      username: "admin",
+      password: "wrongpassword",
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body).toHaveProperty("message", "username atau password salah");
   });
 
   // Test untuk mengambil semua buku
@@ -47,12 +71,15 @@ describe("Book Controller", () => {
 
   // Test untuk membuat buku baru
   it("POST /api/books - success - menambahkan buku baru", async () => {
-    const res = await request(app).post("/api/books").send({
-      title: "New Book",
-      code: "456",
-      author: "New Author",
-      year: 2021,
-    });
+    const res = await request(app)
+      .post("/api/books")
+      .set("Cookie", authCookie)
+      .send({
+        title: "New Book",
+        code: "456",
+        author: "New Author",
+        year: 2021,
+      });
 
     expect(res.statusCode).toBe(201);
     expect(res.body.status).toBe("success");
@@ -70,15 +97,18 @@ describe("Book Controller", () => {
     });
     await book.save();
 
-    const res = await request(app).post("/api/books").send({
-      title: "Book 2",
-      code: "789", // kode yang sama
-      author: "Author 2",
-      year: 2021,
-    });
+    const res = await request(app)
+      .post("/api/books")
+      .set("Cookie", authCookie)
+      .send({
+        title: "Book 2",
+        code: "789", // kode yang sama
+        author: "Author 2",
+        year: 2021,
+      });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Kode buku sudah terdaftar");
+    expect(res.body.message).toBe("Code already exists");
   });
 
   // Test untuk mendapatkan buku berdasarkan ID
@@ -114,12 +144,15 @@ describe("Book Controller", () => {
     });
     await book.save();
 
-    const res = await request(app).put(`/api/books/${book._id}`).send({
-      title: "Updated Book",
-      author: "Updated Author",
-      code: "102",
-      year: 2020,
-    });
+    const res = await request(app)
+      .put(`/api/books/${book._id}`)
+      .set("Cookie", authCookie)
+      .send({
+        title: "Updated Book",
+        author: "Updated Author",
+        code: "102",
+        year: 2020,
+      });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");
@@ -136,8 +169,10 @@ describe("Book Controller", () => {
     });
     await book.save();
 
-    const res = await request(app).delete(`/api/books/${book._id}`);
+    const res = await request(app)
+      .delete(`/api/books/${book._id}`)
+      .set("Cookie", authCookie);
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Buku berhasil dihapus");
+    expect(res.body.message).toBe("buku berhasil dihapus");
   });
 });
